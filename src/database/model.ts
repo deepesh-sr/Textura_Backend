@@ -21,7 +21,7 @@ export enum Status {
   Absent = "absent"
 }
 
-export enum Blogstatus{
+export enum Blogstatus {
     Draft = "draft",
     Published = "published"
 }
@@ -39,14 +39,13 @@ const UserSchema = new Schema<User>({
 })
 
 const SliderSchema = new Schema({
-    id : Number,
-    title : String,
-    badge : String,
-    description : String,
-    buttonText : String,
-    imageUrl : String,
-    label : String
-})
+    title: String,
+    badge: String,
+    description: String,
+    buttonText: String,
+    imageUrl: String,
+    label: String
+}, { timestamps: true })
 
 const BlogSchema = new Schema({
   title: String,
@@ -56,13 +55,13 @@ const BlogSchema = new Schema({
   metaDescription: String,
   featuredImage: String,
   status: {
-    type : String,
-    enum : Object.values(Blogstatus),
+    type: String,
+    enum: Object.values(Blogstatus),
   },
   createdAt: Date,
   updatedAt: Date
 })
 
 export const User = mongoose.models.User || model<User>('User', UserSchema)
-export const Slider = mongoose.model('SliderSchema', SliderSchema)
-export const Blog = mongoose.model('BlogSchema', BlogSchema)
+export const Slider = mongoose.models.Slider || model('Slider', SliderSchema)
+export const Blog = mongoose.models.Blog || model('Blog', BlogSchema)
