@@ -48,19 +48,18 @@ const SliderSchema = new Schema({
 }, { timestamps: true })
 
 const BlogSchema = new Schema({
-  title: String,
-  slug: String,            // UNIQUE
-  content: String,         // Markdown or HTML
+  title: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+  content: String,
   metaTitle: String,
   metaDescription: String,
   featuredImage: String,
   status: {
     type: String,
     enum: Object.values(Blogstatus),
-  },
-  createdAt: Date,
-  updatedAt: Date
-})
+    default: Blogstatus.Draft
+  }
+}, { timestamps: true })
 
 export const User = mongoose.models.User || model<User>('User', UserSchema)
 export const Slider = mongoose.models.Slider || model('Slider', SliderSchema)
