@@ -1,5 +1,6 @@
 import type { Response, Request, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
+import { Role } from '../database/model.js'
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -43,13 +44,12 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
         const jwtSecret = process.env.JWT_SECRET;
         if (token && jwtSecret) {
             const decodedMessage = jwt.verify(token, jwtSecret)
-            // console.log(decodedMessage)
             //   @ts-ignore
             req.role = decodedMessage.role;
             //@ts-ignore
             req.userid = decodedMessage.userid;
             //@ts-ignore
-            if ( req.role == 'Admin'){
+            if (req.role === Role.Teacher) {
                 next();
             }
             else { 
@@ -83,21 +83,18 @@ export const authenticateStudent = async (req: Request, res: Response, next: Nex
         const jwtSecret = process.env.JWT_SECRET;
         if (token && jwtSecret) {
             const decodedMessage = jwt.verify(token, jwtSecret)
-            // console.log(decodedMessage)
             //   @ts-ignore
             req.role = decodedMessage.role;
             //@ts-ignore
-            if ( req.role == 'user'){
+            if (req.role === Role.User) {
                 //@ts-ignore
                 req.userid = decodedMessage.userid;
-                //@ts-ignore
-                // console.log(req.userid)
                 next();
             }
             else { 
                 res.status(403).json({
                     success: false,
-                    error: "Forbidden, student access required"
+                    error: "Forbidden, user access required"
                 })
             }
         }

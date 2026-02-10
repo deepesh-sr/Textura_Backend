@@ -13,7 +13,7 @@ interface User {
 //enum for role
 export enum Role {
   Teacher = "Admin",
-  Student = "User"
+  User = "User"
 }
 
 export enum Status {

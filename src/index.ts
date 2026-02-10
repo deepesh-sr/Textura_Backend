@@ -58,7 +58,7 @@ app.post('/api/auth/signup', async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            role: role || Role.Student
+            role: role || Role.User
         });
         res.status(201).json({ message: "User created", userId: user._id });
     } catch (error) {
