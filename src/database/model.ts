@@ -7,7 +7,7 @@ interface User {
   name: String,
   email: String,
   password: String, // hashed with bcrypt
-  role: "teacher" | "student"
+  role: "Admin" | "User"
 }
 
 //enum for role
