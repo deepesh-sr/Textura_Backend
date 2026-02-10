@@ -4,8 +4,25 @@ import dotenv from 'dotenv'
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
+import createDOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
 import { Slider, User, Role, Blog } from "./database/model.js";
 import { authenticateAdmin } from "./middleware/auth.js";
+
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
+
+// Validation Schemas
+const blogSchema = z.object({
+    title: z.string().min(3).max(100),
+    slug: z.string().min(3).max(100).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
+    content: z.string().min(10),
+    metaTitle: z.string().max(70).optional(),
+    metaDescription: z.string().max(160).optional(),
+    featuredImage: z.string().url().optional(),
+    status: z.enum(['draft', 'published']).default('draft')
+});
 
 dotenv.config();
 const app = express();
@@ -107,9 +124,17 @@ app.get('/api/sliders', async (req, res) => {
 // Blog Admin APIs
 app.post('/api/admin/blogs', authenticateAdmin, async (req, res) => {
     try {
-        const blog = await Blog.create(req.body);
+        const validatedData = blogSchema.parse(req.body);
+        
+        // Sanitize content against XSS
+        validatedData.content = DOMPurify.sanitize(validatedData.content);
+
+        const blog = await Blog.create(validatedData);
         res.status(201).json(blog);
     } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.flatten() });
+        }
         if (error.code === 11000) {
             return res.status(400).json({ error: "Slug must be unique" });
         }
@@ -119,9 +144,22 @@ app.post('/api/admin/blogs', authenticateAdmin, async (req, res) => {
 
 app.put('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
     try {
-        const blog = await Blog.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const validatedData = blogSchema.partial().parse(req.body);
+        
+        if (validatedData.content) {
+            validatedData.content = DOMPurify.sanitize(validatedData.content);
+        }
+
+        const blog = await Blog.findByIdAndUpdate(req.params.id, validatedData, { new: true });
+        if (!blog) return res.status(404).json({ error: "Blog not found" });
         res.json(blog);
-    } catch (error) {
+    } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.flatten() });
+        }
+        if (error.code === 11000) {
+            return res.status(400).json({ error: "Slug must be unique" });
+        }
         res.status(500).json({ error: "Failed to update blog post" });
     }
 });
