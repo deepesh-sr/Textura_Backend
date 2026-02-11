@@ -1,24 +1,18 @@
-import mongoose, { Schema, model, connect, Types } from 'mongoose';
+import mongoose, { Schema, model, Types } from 'mongoose';
 
 mongoose.Promise = global.Promise;
 
 interface User {
   _id: Types.ObjectId,
-  name: String,
-  email: String,
-  password: String, // hashed with bcrypt
+  name: string,
+  email: string,
+  password: string,
   role: "Admin" | "User"
 }
 
-//enum for role
 export enum Role {
   Teacher = "Admin",
   User = "User"
-}
-
-export enum Status {
-  Present = "present",
-  Absent = "absent"
 }
 
 export enum Blogstatus {
@@ -27,10 +21,9 @@ export enum Blogstatus {
 }
 
 const UserSchema = new Schema<User>({
-  // _id: Schema.Types.ObjectId,
   name: String,
   email: String,
-  password: String, // hashed with bcrypt
+  password: String,
   role: {
     type: String,
     enum: Object.values(Role),
