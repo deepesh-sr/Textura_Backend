@@ -10,6 +10,10 @@ import { JSDOM } from 'jsdom';
 import { Slider, User, Role, Blog } from "./database/model.js";
 import { authenticateAdmin } from "./middleware/auth.js";
 
+const UserTyped = User as any;
+const SliderTyped = Slider as any;
+const BlogTyped = Blog as any;
+
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 
@@ -54,7 +58,7 @@ app.post('/api/auth/signup', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await User.create({
+        const user = await UserTyped.create({
             name,
             email,
             password: hashedPassword,
@@ -70,7 +74,7 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/signin', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        const user = await UserTyped.findOne({ email });
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
@@ -88,7 +92,7 @@ app.post('/api/auth/signin', async (req, res) => {
 // Slider Admin APIs
 app.post('/api/admin/sliders', authenticateAdmin, async (req, res) => {
     try {
-        const slider = await Slider.create(req.body);
+        const slider = await SliderTyped.create(req.body);
         res.status(201).json(slider);
     } catch (error) {
         res.status(500).json({ error: "Failed to create slider" });
@@ -97,7 +101,7 @@ app.post('/api/admin/sliders', authenticateAdmin, async (req, res) => {
 
 app.put('/api/admin/sliders/:id', authenticateAdmin, async (req, res) => {
     try {
-        const slider = await Slider.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const slider = await SliderTyped.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.json(slider);
     } catch (error) {
         res.status(500).json({ error: "Failed to update slider" });
@@ -106,7 +110,7 @@ app.put('/api/admin/sliders/:id', authenticateAdmin, async (req, res) => {
 
 app.delete('/api/admin/sliders/:id', authenticateAdmin, async (req, res) => {
     try {
-        await Slider.findByIdAndDelete(req.params.id);
+        await SliderTyped.findByIdAndDelete(req.params.id);
         res.json({ message: "Slider deleted" });
     } catch (error) {
         res.status(500).json({ error: "Failed to delete slider" });
@@ -115,7 +119,7 @@ app.delete('/api/admin/sliders/:id', authenticateAdmin, async (req, res) => {
 
 app.get('/api/sliders', async (req, res) => {
     try {
-        const sliders = await Slider.find();
+        const sliders = await SliderTyped.find();
         res.json(sliders);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch sliders" });
@@ -134,7 +138,7 @@ app.post('/api/admin/blogs', authenticateAdmin, async (req, res) => {
         // Sanitize content against XSS
         validatedData.content = DOMPurify.sanitize(validatedData.content);
 
-        const blog = await Blog.create(validatedData);
+        const blog = await BlogTyped.create(validatedData);
         res.status(201).json(blog);
     } catch (error: any) {
         console.error("Blog Create Error:", error); // Check your terminal for this!
@@ -157,7 +161,7 @@ app.put('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
             validatedData.content = DOMPurify.sanitize(validatedData.content);
         }
 
-        const blog = await Blog.findByIdAndUpdate(req.params.id, validatedData, { new: true });
+        const blog = await BlogTyped.findByIdAndUpdate(req.params.id, validatedData, { returnDocument: 'after' });
         if (!blog) return res.status(404).json({ error: "Blog not found" });
         res.json(blog);
     } catch (error: any) {
@@ -174,7 +178,7 @@ app.put('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
 
 app.delete('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
     try {
-        await Blog.findByIdAndDelete(req.params.id);
+        await BlogTyped.findByIdAndDelete(req.params.id);
         res.json({ message: "Blog post deleted" });
     } catch (error) {
         res.status(500).json({ error: "Failed to delete blog post" });
@@ -184,7 +188,7 @@ app.delete('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
 // Public Blog APIs
 app.get('/api/blogs', async (req, res) => {
     try {
-        const blogs = await Blog.find({ status: 'published' }).sort({ createdAt: -1 });
+        const blogs = await BlogTyped.find({ status: 'published' }).sort({ createdAt: -1 });
         res.json(blogs);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch blogs" });
@@ -193,7 +197,7 @@ app.get('/api/blogs', async (req, res) => {
 
 app.get('/api/blogs/:slug', async (req, res) => {
     try {
-        const blog = await Blog.findOne({ slug: req.params.slug });
+        const blog = await BlogTyped.findOne({ slug: req.params.slug });
         if (!blog) return res.status(404).json({ error: "Blog not found" });
         res.json(blog);
     } catch (error) {
