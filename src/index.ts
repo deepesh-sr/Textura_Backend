@@ -21,7 +21,7 @@ const blogSchema = z.object({
     metaTitle: z.string().max(70).optional(),
     metaDescription: z.string().max(160).optional(),
     featuredImage: z.string().url().optional(),
-    status: z.enum(['draft', 'published']).default('draft')
+    status: z.enum(['draft', 'published']).optional()
 });
 
 dotenv.config();
@@ -62,6 +62,7 @@ app.post('/api/auth/signup', async (req, res) => {
         });
         res.status(201).json({ message: "User created", userId: user._id });
     } catch (error) {
+        console.error("Signup Error:", error);
         res.status(500).json({ error: "Signup failed" });
     }
 });
@@ -124,7 +125,11 @@ app.get('/api/sliders', async (req, res) => {
 // Blog Admin APIs
 app.post('/api/admin/blogs', authenticateAdmin, async (req, res) => {
     try {
-        const validatedData = blogSchema.parse(req.body);
+        const body = { ...req.body };
+        // If status is missing in POST, Default to draft
+        if (!body.status) body.status = 'draft';
+        
+        const validatedData = blogSchema.parse(body);
         
         // Sanitize content against XSS
         validatedData.content = DOMPurify.sanitize(validatedData.content);
@@ -132,6 +137,7 @@ app.post('/api/admin/blogs', authenticateAdmin, async (req, res) => {
         const blog = await Blog.create(validatedData);
         res.status(201).json(blog);
     } catch (error: any) {
+        console.error("Blog Create Error:", error); // Check your terminal for this!
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: error.flatten() });
         }
@@ -144,7 +150,8 @@ app.post('/api/admin/blogs', authenticateAdmin, async (req, res) => {
 
 app.put('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
     try {
-        const validatedData = blogSchema.partial().parse(req.body);
+        const body = { ...req.body };
+        const validatedData = blogSchema.partial().parse(body);
         
         if (validatedData.content) {
             validatedData.content = DOMPurify.sanitize(validatedData.content);
@@ -154,6 +161,7 @@ app.put('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
         if (!blog) return res.status(404).json({ error: "Blog not found" });
         res.json(blog);
     } catch (error: any) {
+        console.error("Blog Update Error:", error); // Check your terminal for this!
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: error.flatten() });
         }
